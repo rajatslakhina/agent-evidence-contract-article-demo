@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+<rect width="1400" height="900" fill="#0f172a"/>
+<text x="40" y="58" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="30" fill="#f8fafc" font-weight="bold" text-anchor="start">Six checkable claims vs. what the harness actually saw</text>
+<text x="40" y="92" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="17" fill="#94a3b8" font-weight="normal" text-anchor="start">Constructed coupon-bug session from the EvidenceContract repo. Evidence counts only if it is fresh, in scope and non-vacuous.</text>
+<text x="40" y="140" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="15" fill="#64748b" font-weight="bold" text-anchor="start">THE AGENT SAID</text>
+<text x="760" y="140" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="15" fill="#64748b" font-weight="bold" text-anchor="start">THE HARNESS SAW (event log, in order)</text>
+<rect x="760" y="160" width="600" height="64" rx="8" fill="#1e293b" stroke="#334155" stroke-dasharray="0"/>
+<text x="778" y="187" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="17" fill="#64748b" font-weight="bold" text-anchor="start">0</text>
+<text x="808" y="187" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="16" fill="#e2e8f0" font-weight="normal" text-anchor="start">swift test --filter CartStoreTests/testApplyCouponTwice</text>
+<text x="808" y="210" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="15" fill="#94a3b8" font-weight="normal" text-anchor="start">exit 1 · trapped, no summary  (the repro)</text>
+<rect x="760" y="242" width="600" height="64" rx="8" fill="#172033" stroke="#475569" stroke-dasharray="5 4"/>
+<text x="778" y="269" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="17" fill="#64748b" font-weight="bold" text-anchor="start">1</text>
+<text x="808" y="269" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="16" fill="#cbd5e1" font-weight="normal" text-anchor="start">edit Sources/Checkout/CartStore.swift</text>
+<text x="808" y="292" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="15" fill="#94a3b8" font-weight="normal" text-anchor="start">the fix</text>
+<rect x="760" y="324" width="600" height="64" rx="8" fill="#1e293b" stroke="#334155" stroke-dasharray="0"/>
+<text x="778" y="351" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="17" fill="#64748b" font-weight="bold" text-anchor="start">2</text>
+<text x="808" y="351" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="16" fill="#e2e8f0" font-weight="normal" text-anchor="start">swift test --filter CartStoreTests</text>
+<text x="808" y="374" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="15" fill="#94a3b8" font-weight="normal" text-anchor="start">exit 0 · 18 run · 0 failed</text>
+<rect x="760" y="406" width="600" height="64" rx="8" fill="#172033" stroke="#475569" stroke-dasharray="5 4"/>
+<text x="778" y="433" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="17" fill="#64748b" font-weight="bold" text-anchor="start">3</text>
+<text x="808" y="433" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="16" fill="#cbd5e1" font-weight="normal" text-anchor="start">edit Sources/Checkout/CouponValidator.swift</text>
+<text x="808" y="456" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="15" fill="#94a3b8" font-weight="normal" text-anchor="start">renames legacyDiscount(for:)</text>
+<rect x="760" y="488" width="600" height="64" rx="8" fill="#172033" stroke="#475569" stroke-dasharray="5 4"/>
+<text x="778" y="515" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="17" fill="#64748b" font-weight="bold" text-anchor="start">4</text>
+<text x="808" y="515" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="16" fill="#cbd5e1" font-weight="normal" text-anchor="start">edit Sources/Checkout/PriceFormatter.swift</text>
+<text x="808" y="538" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="15" fill="#94a3b8" font-weight="normal" text-anchor="start">“while I’m in here”</text>
+<rect x="760" y="570" width="600" height="64" rx="8" fill="#1e293b" stroke="#334155" stroke-dasharray="0"/>
+<text x="778" y="597" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="17" fill="#64748b" font-weight="bold" text-anchor="start">5</text>
+<text x="808" y="597" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="16" fill="#e2e8f0" font-weight="normal" text-anchor="start">swift test --filter CouponValidatorTests</text>
+<text x="808" y="620" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="15" fill="#94a3b8" font-weight="normal" text-anchor="start">exit 0 · 0 run  (no class has that name)</text>
+<rect x="760" y="652" width="600" height="64" rx="8" fill="#1e293b" stroke="#334155" stroke-dasharray="0"/>
+<text x="778" y="679" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="17" fill="#64748b" font-weight="bold" text-anchor="start">6</text>
+<text x="808" y="679" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="16" fill="#e2e8f0" font-weight="normal" text-anchor="start">swift build</text>
+<text x="808" y="702" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="15" fill="#94a3b8" font-weight="normal" text-anchor="start">exit 0</text>
+<rect x="760" y="734" width="600" height="64" rx="8" fill="#1e293b" stroke="#334155" stroke-dasharray="0"/>
+<text x="778" y="761" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="17" fill="#64748b" font-weight="bold" text-anchor="start">7</text>
+<text x="808" y="761" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="16" fill="#e2e8f0" font-weight="normal" text-anchor="start">rg -n legacyDiscount</text>
+<text x="808" y="784" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="15" fill="#94a3b8" font-weight="normal" text-anchor="start">2 hits in App/Legacy/PromoBridge.m</text>
+<line x1="700" y1="561" x2="1370" y2="561" stroke="#f59e0b" stroke-width="3" stroke-dasharray="10 6"/>
+<rect x="1178" y="548" width="182" height="26" rx="13" fill="#f59e0b"/>
+<text x="1269" y="567" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="14" fill="#0f172a" font-weight="bold" text-anchor="middle">LAST EDIT (event 4)</text>
+<rect x="40" y="164" width="590" height="76" rx="10" fill="#111c2f" stroke="#f59e0b" stroke-opacity="0.55"/>
+<rect x="56" y="178" width="140" height="28" rx="14" fill="#f59e0b" fill-opacity="0.18" stroke="#f59e0b"/>
+<text x="126" y="197" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="13" fill="#f59e0b" font-weight="bold" text-anchor="middle">STALE</text>
+<text x="214" y="198" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="18" fill="#f1f5f9" font-weight="normal" text-anchor="start">Fixed the crash, covered by</text>
+<text x="214" y="224" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="18" fill="#f1f5f9" font-weight="normal" text-anchor="start">CartStoreTests/testApplyCouponTwice</text>
+<path d="M630,200 C700,200 690,356 760,356" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+<circle cx="760" cy="356" r="5" fill="#f59e0b"/>
+<rect x="40" y="268" width="590" height="56" rx="10" fill="#111c2f" stroke="#f59e0b" stroke-opacity="0.55"/>
+<rect x="56" y="282" width="140" height="28" rx="14" fill="#f59e0b" fill-opacity="0.18" stroke="#f59e0b"/>
+<text x="126" y="301" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="13" fill="#f59e0b" font-weight="bold" text-anchor="middle">STALE</text>
+<text x="214" y="302" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="18" fill="#f1f5f9" font-weight="normal" text-anchor="start">CartStoreTests pass.</text>
+<path d="M630,294 C700,294 690,356 760,356" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+<circle cx="760" cy="356" r="5" fill="#f59e0b"/>
+<rect x="40" y="372" width="590" height="56" rx="10" fill="#111c2f" stroke="#f59e0b" stroke-opacity="0.55"/>
+<rect x="56" y="386" width="140" height="28" rx="14" fill="#f59e0b" fill-opacity="0.18" stroke="#f59e0b"/>
+<text x="126" y="405" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="13" fill="#f59e0b" font-weight="bold" text-anchor="middle">VACUOUS</text>
+<text x="214" y="406" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="18" fill="#f1f5f9" font-weight="normal" text-anchor="start">CouponValidatorTests pass.</text>
+<path d="M630,398 C700,398 690,602 760,602" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+<circle cx="760" cy="602" r="5" fill="#f59e0b"/>
+<rect x="40" y="476" width="590" height="56" rx="10" fill="#111c2f" stroke="#f59e0b" stroke-opacity="0.55"/>
+<rect x="56" y="490" width="140" height="28" rx="14" fill="#f59e0b" fill-opacity="0.18" stroke="#f59e0b"/>
+<text x="126" y="509" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="13" fill="#f59e0b" font-weight="bold" text-anchor="middle">UNDER-SCOPED</text>
+<text x="214" y="510" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="18" fill="#f1f5f9" font-weight="normal" text-anchor="start">All tests pass.</text>
+<path d="M630,502 C700,502 690,602 760,602" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+<circle cx="760" cy="602" r="5" fill="#f59e0b"/>
+<rect x="40" y="580" width="590" height="56" rx="10" fill="#111c2f" stroke="#22c55e" stroke-opacity="0.55"/>
+<rect x="56" y="594" width="140" height="28" rx="14" fill="#22c55e" fill-opacity="0.18" stroke="#22c55e"/>
+<text x="126" y="613" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="13" fill="#22c55e" font-weight="bold" text-anchor="middle">BACKED</text>
+<text x="214" y="614" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="18" fill="#f1f5f9" font-weight="normal" text-anchor="start">The package builds cleanly.</text>
+<path d="M630,606 C700,606 690,684 760,684" fill="none" stroke="#22c55e" stroke-width="2.5"/>
+<circle cx="760" cy="684" r="5" fill="#22c55e"/>
+<rect x="40" y="684" width="590" height="76" rx="10" fill="#111c2f" stroke="#ef4444" stroke-opacity="0.55"/>
+<rect x="56" y="698" width="140" height="28" rx="14" fill="#ef4444" fill-opacity="0.18" stroke="#ef4444"/>
+<text x="126" y="717" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="13" fill="#ef4444" font-weight="bold" text-anchor="middle">CONTRADICTED</text>
+<text x="214" y="718" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="18" fill="#f1f5f9" font-weight="normal" text-anchor="start">No remaining references to</text>
+<text x="214" y="744" font-family="Menlo, SF Mono, DejaVu Sans Mono, monospace" font-size="18" fill="#f1f5f9" font-weight="normal" text-anchor="start">legacyDiscount.</text>
+<path d="M630,720 C700,720 690,766 760,766" fill="none" stroke="#ef4444" stroke-width="2.5"/>
+<circle cx="760" cy="766" r="5" fill="#ef4444"/>
+<text x="40" y="828" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="16" fill="#94a3b8" font-weight="normal" text-anchor="start">+1 opinion (“I think the coupon flow is easier to follow now.”) passed through as not provable.</text>
+<text x="40" y="862" font-family="Helvetica Neue, Helvetica, Arial, DejaVu Sans, sans-serif" font-size="18" fill="#f8fafc" font-weight="bold" text-anchor="start">5 of 6 rejected. 1 is false on the agent’s own evidence. The other 4 were never proven, or stopped being true.</text>
+</svg>
