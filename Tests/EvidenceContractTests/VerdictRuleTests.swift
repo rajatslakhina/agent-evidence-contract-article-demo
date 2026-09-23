@@ -48,10 +48,9 @@ final class VerdictRuleTests: XCTestCase {
         XCTAssertEqual(evaluator.verdict(for: .regressionFixed(test: "ATests/testBug"), in: log), .neverFailed)
     }
 
-    func testRegressionFailureAfterTheLastEditIsNotARepro() {
-        // A failure observed after the last edit precedes no fix.
+    func testRegressionTestFailingNowIsContradictedNotNeverFailed() {
         let log = SessionLog([.edit(file: "A.swift"), test(.filtered(["ATests/testBug"]), executed: 1, failed: ["ATests/testBug"], exit: 1)])
-        XCTAssertEqual(evaluator.verdict(for: .regressionFixed(test: "ATests/testBug"), in: log), .neverFailed)
+        XCTAssertEqual(evaluator.verdict(for: .regressionFixed(test: "ATests/testBug"), in: log), .contradicted(evidence: 1))
     }
 
     func testRegressionReproThenFixThenGreenIsBacked() {
@@ -63,9 +62,35 @@ final class VerdictRuleTests: XCTestCase {
         XCTAssertEqual(evaluator.verdict(for: .regressionFixed(test: "ATests/testBug"), in: log), .backed(evidence: 2))
     }
 
+    func testWordBoundarySearchWithNoHitsIsUnderScoped() {
+        let anchored = ToolRun(command: "rg", exitCode: 1, kind: .search(pattern: #"\blegacyDiscount\b"#, narrowed: false, hits: 0))
+        let word = ToolRun(command: "rg -w", exitCode: 1, kind: .search(pattern: "legacyDiscount", narrowed: true, hits: 0))
+        let anchoredHit = ToolRun(command: "rg", exitCode: 0, kind: .search(pattern: #"\blegacyDiscount\b"#, narrowed: false, hits: 1))
+        let symbol = ClaimKind.noReferences(symbol: "legacyDiscount")
+        XCTAssertEqual(evaluator.verdict(for: symbol, in: SessionLog([.run(anchored)])), .underScoped(evidence: 0))
+        XCTAssertEqual(evaluator.verdict(for: symbol, in: SessionLog([.run(word)])), .underScoped(evidence: 0))
+        XCTAssertEqual(evaluator.verdict(for: symbol, in: SessionLog([.run(anchoredHit)])), .contradicted(evidence: 0))
+    }
+
+    func testLongerPatternThanTheSymbolIsUnderScoped() {
+        let longer = ToolRun(command: "rg", exitCode: 1, kind: .search(pattern: "legacyDiscountFor", narrowed: false, hits: 0))
+        let leading = ToolRun(command: "rg", exitCode: 1, kind: .search(pattern: #"\blegacyDiscount"#, narrowed: false, hits: 0))
+        let symbol = ClaimKind.noReferences(symbol: "legacyDiscount")
+        XCTAssertEqual(evaluator.verdict(for: symbol, in: SessionLog([.run(longer)])), .underScoped(evidence: 0))
+        XCTAssertEqual(evaluator.verdict(for: symbol, in: SessionLog([.run(leading)])), .backed(evidence: 0))
+    }
+
+    func testFailureOutsideTheClaimedScopeDoesNotContradictIt() {
+        let log = SessionLog([test(.fullSuite, executed: 200, failed: ["SyncTests/testX"], exit: 1)])
+        XCTAssertEqual(evaluator.verdict(for: .testsPass(.filtered(["CartStoreTests"])), in: log), .backed(evidence: 0))
+        XCTAssertEqual(evaluator.verdict(for: .testsPass(.fullSuite), in: log), .contradicted(evidence: 0))
+        let unnamed = SessionLog([test(.fullSuite, executed: nil, failed: [], exit: 1)])
+        XCTAssertEqual(evaluator.verdict(for: .testsPass(.filtered(["CartStoreTests"])), in: unnamed), .contradicted(evidence: 0))
+    }
+
     func testSearchExitOneIsACleanResultAndExitTwoIsIgnored() {
-        let clean = ToolRun(command: "rg x", exitCode: 1, kind: .search(pattern: "x", hits: 0))
-        let broken = ToolRun(command: "rg x", exitCode: 2, kind: .search(pattern: "x", hits: 0))
+        let clean = ToolRun(command: "rg x", exitCode: 1, kind: .search(pattern: "x", narrowed: false, hits: 0))
+        let broken = ToolRun(command: "rg x", exitCode: 2, kind: .search(pattern: "x", narrowed: false, hits: 0))
         XCTAssertEqual(evaluator.verdict(for: .noReferences(symbol: "x"), in: SessionLog([.run(clean)])), .backed(evidence: 0))
         XCTAssertEqual(evaluator.verdict(for: .noReferences(symbol: "x"), in: SessionLog([.run(broken)])), .unbacked)
     }

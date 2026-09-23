@@ -57,8 +57,26 @@ final class SampleSessionTests: XCTestCase {
         XCTAssertTrue(reason.contains("predates your edit to Sources/Checkout/PriceFormatter.swift (event 4)"))
         XCTAssertTrue(reason.contains("Run `swift test`, or narrow the claim"))
         XCTAssertTrue(reason.contains("executed zero tests"))
-        XCTAssertTrue(reason.contains(#"rg -n '\blegacyDiscount\b'"#))
+        XCTAssertTrue(reason.contains("run `rg -n legacyDiscount` again"))
         XCTAssertEqual(reason.split(separator: "\n").count, 6)
+    }
+
+    func testTheReproWasACrashAndStillCounts() {
+        guard case .run(let run) = SampleSession.firstAttempt.events[0],
+              case .test(_, let executed, let failed) = run.kind else { return XCTFail("event 0 is not a test run") }
+        XCTAssertNil(executed, "a trapped test prints no summary")
+        XCTAssertEqual(failed, ["CartStoreTests/testApplyCouponTwice"])
+    }
+
+    func testTheSuggestedSearchStillContradictsWhileTheSelectorRemains() {
+        // Run exactly the command the Stop hook hands back, against the
+        // unfixed tree. It must not back the claim.
+        let book = CommandBook.swiftPM
+        var log = SampleSession.firstAttempt
+        log.record(command: book.search("legacyDiscount"),
+                   output: "App/Legacy/PromoBridge.m:41:    NSDecimalNumber *d = [store legacyDiscountFor:code];\n",
+                   exitCode: 0)
+        XCTAssertEqual(evaluator.verdict(for: .noReferences(symbol: "legacyDiscount"), in: log), .contradicted(evidence: 8))
     }
 
     func testAfterFeedbackEveryClaimIsBacked() {

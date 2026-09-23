@@ -25,7 +25,26 @@ final class ClaimExtractorTests: XCTestCase {
     func testHedgedSuccessIsNotASuccessClaim() {
         XCTAssertEqual(kinds("Not all tests pass yet."), [.notProvable])
         XCTAssertEqual(kinds("It builds cleanly except on Catalyst."), [.notProvable])
-        XCTAssertEqual(kinds("CartStoreTests pass but SyncTests fail."), [.notProvable])
+        XCTAssertEqual(kinds("None of the tests pass."), [.notProvable])
+    }
+
+    func testNegationBeforeTheClaimInTheSameSentenceDoesNotHideIt() {
+        XCTAssertEqual(kinds("There are no remaining references to legacyDiscount and all tests pass."),
+                       [.noReferences(symbol: "legacyDiscount"), .testsPass(.fullSuite)])
+        XCTAssertEqual(kinds("I didn't change the public API, and all tests pass."), [.testsPass(.fullSuite)])
+        XCTAssertEqual(kinds("No UI changes, all tests pass."), [.testsPass(.fullSuite)])
+        XCTAssertEqual(kinds("It doesn't build cleanly."), [.notProvable])
+        XCTAssertEqual(kinds("All 214 tests pass."), [.testsPass(.fullSuite)])
+    }
+
+    func testNegationInAnotherClauseDoesNotHideTheClaim() {
+        XCTAssertEqual(kinds("All tests pass and I didn't touch the API."), [.testsPass(.fullSuite)])
+        XCTAssertEqual(kinds("The build succeeds, but CI is slow."), [.buildSucceeds])
+        XCTAssertEqual(kinds("CartStoreTests pass but SyncTests fail."), [.testsPass(.filtered(["CartStoreTests"]))])
+    }
+
+    func testTheWordFailingAloneIsNotAHedge() {
+        XCTAssertEqual(kinds("Fixed the failing test and all tests pass."), [.testsPass(.fullSuite)])
     }
 
     func testOpinionsPassThroughAndFragmentsAreDropped() {
