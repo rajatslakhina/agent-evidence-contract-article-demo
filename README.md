@@ -4,7 +4,7 @@
 
 A small Swift package that reads a coding agent's final report, pulls out the claims a tool could check ("all tests pass", "builds cleanly", "no remaining references to `legacyDiscount`", "fixed, covered by `CartStoreTests/testApplyCouponTwice`"), and checks each one against the harness's own log of what actually ran, in order.
 
-Article: (added after publish)
+Article: [Your Coding Agent Isn’t Lying. Its Evidence Is Just Two Edits Old.](https://medium.com/@er.rajatlakhina/your-coding-agent-isnt-lying-its-evidence-is-just-two-edits-old-ecf87fc85b44)
 
 ![Timeline of the sample session: seven claims checked against eight harness events; one backed, five rejected](docs/timeline.svg)
 
@@ -12,12 +12,14 @@ Article: (added after publish)
 
 A claim is only backed by a run that is:
 
-- **from the harness**, not quoted in the agent's summary (`ContractEvaluator.evaluate(report:log:)` takes the two separately, and only the log can back anything),
+- **from the harness**, not quoted in the agent's summary. `ContractEvaluator.evaluate(report:log:)` takes the two separately and only the log can back anything; `SessionEvent` has no case for "the agent says it ran X". The only public way to put a tool run into the log is `record(command:output:exitCode:)` (edits go in through `recordEdit(_:)`). The type can't stop you feeding it invented output, so wire it to commands your harness actually executed.
 - **fresh**: after the last edit, because a green run before an edit proves something about code that no longer exists,
-- **in scope**: "all tests pass" needs a full-suite run, not `--filter CartStoreTests`,
+- **in scope**: "all tests pass" needs a full-suite run, not `--filter CartStoreTests`. Only a search for `legacyDiscount` or `\blegacyDiscount` can back "no references". Zero hits from `\blegacyDiscount\b`, `rg -w`, a longer pattern, or a search restricted to a path, type or glob doesn't: the boundary misses the Objective-C selector `legacyDiscountFor:`, and the others miss part of the tree. `swift test --skip` and `xcodebuild -skip-testing:` runs back no claim by scope,
 - **non-vacuous**: `swift test --filter NoSuchTests` exits 0 having executed zero tests (verified on Swift 6.0.3; captured output is in the tests).
 
-Regression claims need one more thing: a run showing the test **failing before the fix**. A test that never failed has not been shown to exercise the bug.
+`rg` and `grep` exit 1 for "no matches", which is a clean result, and exit 0 always counts as at least one hit, so `rg -q` can't sneak through.
+
+Regression claims need one more thing: a run showing the test **failing before the fix**. A test that never failed has not been shown to exercise the bug. A crash counts: a trapped test prints no failure line or summary, so a signal exit under a filter naming exactly one test method is recorded as that test failing (real captured output is in `ToolRunParserTests`).
 
 ## Verdicts
 
@@ -55,12 +57,13 @@ Each rejected claim comes with a next move phrased as a tool call, for example:
 
 ## The sample session
 
-`SampleSession` is a **constructed** session, not a measurement: an agent fixing a crash when a coupon is applied twice. Its report makes seven claims; six are checkable. Against the first log: 1 backed, 2 stale, 1 vacuous, 1 under-scoped, 1 contradicted. After the Stop-hook feedback the agent runs four more commands and a revised report is fully backed. `SampleSessionTests` pins every one of those numbers.
+`SampleSession` is a **constructed** session, not a measurement: an agent fixing a crash when a coupon is applied twice. Its report makes seven claims; six are checkable. Against the first log: 1 backed, 2 stale, 1 vacuous, 1 under-scoped, 1 contradicted. In the constructed follow-up turn the agent makes one more edit and runs three commands, and a revised report is fully backed. `SampleSessionTests` pins every verdict and event number.
 
 ## Known limits
 
-- Claim extraction is deterministic pattern matching. It will miss phrasings it doesn't know; missed claims become `not provable`, never falsely backed.
+- Claim extraction is deterministic pattern matching. Phrasings it doesn't know become `not provable`, which the gate lets through, so it is only as strong as its patterns.
 - Coverage is by name. A green full-suite run backs "CouponValidatorTests pass" even if no class has that name (pinned in `testKnownLimitFullSuiteBacksAClaimAboutAClassThatDoesNotExist`).
+- Swift Testing counts are read ("Test run with N tests"), but its failing test names are not parsed yet, so a regression repro has to be an XCTest failure or a crash under a single-test filter.
 - The parser understands `swift test`, `swift build`, `xcodebuild`, `rg` and `grep`. Turning your harness's transcript into `record(command:output:exitCode:)` calls is yours to write.
 
 ## How to run
@@ -79,8 +82,8 @@ The Demo app consumes the package through a local package reference (`relativePa
 | Check | Result |
 |---|---|
 | `swift build` | passes (Swift 6.0.3, Linux aarch64) |
-| `swift test` | 34 tests, 0 failures |
+| `swift test` | 49 tests, 0 failures |
 | `Demo.xcodeproj` | statically validated: balanced braces/parens, 20 objects all defined and referenced, parses as an OpenStep plist; shared scheme XML well-formed |
-| Simulator run | **not done**. The app target has never been compiled. See `Demo/Screenshots/README.md`. |
+| Simulator run | **not done**. The app target has never been compiled, and neither has `EvidenceContractDemoView` (it is behind `#if canImport(SwiftUI)`, which Linux skips). See `Demo/Screenshots/README.md`. |
 
 MIT License.
