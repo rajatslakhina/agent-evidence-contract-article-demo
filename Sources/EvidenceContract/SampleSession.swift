@@ -1,7 +1,8 @@
 /// A constructed session, not a measured one: an agent fixing a crash when a
 /// coupon is applied twice, in a Swift package with an Objective-C app target
-/// next to it. Command outputs use the exact XCTest line formats that
-/// `swift test` prints on Linux, captured from a real run.
+/// next to it. Every output line uses the format the real tool prints (for
+/// tests, `swift test` 6.0.3 on Linux); the crash lines in event 0 were captured
+/// from a real trapped test and renamed. Timestamps and counts are invented.
 public enum SampleSession {
     public static let report = """
     Summary:
@@ -23,14 +24,11 @@ public enum SampleSession {
             Test Suite 'Selected tests' started at 2026-09-23 10:02:11.301
             Test Suite 'CartStoreTests' started at 2026-09-23 10:02:11.302
             Test Case 'CartStoreTests.testApplyCouponTwice' started at 2026-09-23 10:02:11.302
-            Fatal error: Index out of range
-            Test Case 'CartStoreTests.testApplyCouponTwice' failed (0.004 seconds)
-            Test Suite 'CartStoreTests' failed at 2026-09-23 10:02:11.306
-            \t Executed 1 test, with 1 failure (0 unexpected) in 0.004 (0.004) seconds
-            Test Suite 'Selected tests' failed at 2026-09-23 10:02:11.306
-            \t Executed 1 test, with 1 failure (0 unexpected) in 0.004 (0.005) seconds
+            Swift/ContiguousArrayBuffer.swift:675: Fatal error: Index out of range
+            *** Program crashed: System trap at 0x0000eb0b74aa9994 ***
+            error: Exited with unexpected signal code 5
             """,
-            exitCode: 1)                                                   // 0: the repro
+            exitCode: 1)                                                   // 0: the repro (a trap, so no failure line)
         log.recordEdit("Sources/Checkout/CartStore.swift")                // 1: the fix
         log.record(
             command: "swift test --filter CartStoreTests",
@@ -43,7 +41,7 @@ public enum SampleSession {
             """,
             exitCode: 0)                                                   // 2: green
         log.recordEdit("Sources/Checkout/CouponValidator.swift")          // 3: renames legacyDiscount(for:)
-        log.recordEdit("Sources/Checkout/PriceFormatter.swift")           // 4: "while I'm here"
+        log.recordEdit("Sources/Checkout/PriceFormatter.swift")           // 4: "while I'm in here"
         log.record(
             command: "swift test --filter CouponValidatorTests",
             output: """

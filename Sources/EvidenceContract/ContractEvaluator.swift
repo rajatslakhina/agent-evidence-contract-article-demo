@@ -41,7 +41,12 @@ public struct ContractEvaluator: Sendable {
                 return .unbacked
             }
             if latest.index < lastEdit { return .stale(evidence: latest.index, lastEdit: lastEdit) }
-            if !latest.run.succeeded || !latest.failed.isEmpty { return .contradicted(evidence: latest.index) }
+            // Only failures inside the claimed scope contradict it. A failing
+            // run that names no failures could have failed anywhere.
+            let relevant = latest.failed.filter { claimed.covers(test: $0) }
+            if !relevant.isEmpty || (!latest.run.succeeded && latest.failed.isEmpty) {
+                return .contradicted(evidence: latest.index)
+            }
             if (latest.executed ?? 0) == 0 { return .vacuous(evidence: latest.index) }
             return .backed(evidence: latest.index)
 
@@ -61,24 +66,42 @@ public struct ContractEvaluator: Sendable {
         case .noReferences(let symbol):
             // rg and grep exit 1 for "no matches": that is a clean result, not
             // a failure. Exit 2 and above is an error and proves nothing.
-            let searches = log.runs.compactMap { entry -> (index: Int, hits: Int)? in
-                guard case .search(let pattern, let hits) = entry.run.kind,
+            let searches = log.runs.compactMap { entry -> (index: Int, hits: Int, narrow: Bool)? in
+                guard case .search(let pattern, let narrowed, let hits) = entry.run.kind,
                       pattern.contains(symbol), entry.run.exitCode <= 1 else { return nil }
-                return (entry.index, hits)
+                // Zero hits from a narrowed search does not mean "no
+                // references"; hits from it still count.
+                // Only `symbol` or `\bsymbol` is a search for every use. A
+                // trailing boundary, a longer pattern (legacyDiscountFor), -w,
+                // a path or a glob each search for less.
+                let exact = pattern == symbol || pattern == #"\b"# + symbol
+                let narrow = narrowed || !exact
+                return (entry.index, hits, narrow)
             }
-            guard let latest = searches.last else { return .unbacked }
+            guard let latest = searches.last(where: { !$0.narrow || $0.hits > 0 }) else {
+                if let narrow = searches.last { return .underScoped(evidence: narrow.index) }
+                return .unbacked
+            }
             if latest.index < lastEdit { return .stale(evidence: latest.index, lastEdit: lastEdit) }
             if latest.hits > 0 { return .contradicted(evidence: latest.index) }
             return .backed(evidence: latest.index)
 
         case .regressionFixed(let test):
+            let latest = testRuns.last(where: { $0.scope.covers(test: test) })
+            func failsNow(_ entry: (index: Int, run: ToolRun, scope: TestScope, executed: Int?, failed: [String])) -> Bool {
+                entry.failed.contains { $0 == test || $0.hasPrefix(test + "/") }
+                    || (!entry.run.succeeded && entry.failed.isEmpty)
+            }
+            // Failing right now beats every other question.
+            if let latest, latest.index > lastEdit, failsNow(latest) {
+                return .contradicted(evidence: latest.index)
+            }
             let reproduced = testRuns.contains { entry in
                 entry.index < lastEdit && entry.failed.contains { $0 == test || $0.hasPrefix(test + "/") }
             }
             guard reproduced else { return .neverFailed }
-            guard let latest = testRuns.last(where: { $0.scope.covers(test: test) }) else { return .unbacked }
+            guard let latest else { return .unbacked }
             if latest.index < lastEdit { return .stale(evidence: latest.index, lastEdit: lastEdit) }
-            if !latest.run.succeeded || !latest.failed.isEmpty { return .contradicted(evidence: latest.index) }
             if (latest.executed ?? 0) == 0 { return .vacuous(evidence: latest.index) }
             return .backed(evidence: latest.index)
         }
@@ -105,7 +128,7 @@ public struct ContractEvaluator: Sendable {
         case .stale(let evidence, let lastEdit):
             return "Re-run `\(command)`. Your last run (event \(evidence)) predates your edit to \(edited) (event \(lastEdit))."
         case .underScoped(let evidence):
-            return "Event \(evidence) ran a narrower scope than you claimed. Run `\(command)`, or narrow the claim to what you ran."
+            return "Event \(evidence) checked a narrower scope than you claimed. Run `\(command)`, or narrow the claim to what you ran."
         case .vacuous(let evidence):
             return "Event \(evidence) executed zero tests, which exits 0 and proves nothing: `\(command)` matched no test. Correct the name and re-run, or drop the claim."
         case .contradicted(let evidence):

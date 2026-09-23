@@ -60,7 +60,7 @@ public struct CommandBook: Hashable, Sendable {
         fullSuite: "swift test",
         filteredTests: "swift test --filter {filter}",
         build: "swift build",
-        search: #"rg -n '\b{symbol}\b'"#)
+        search: "rg -n {symbol}")
 
     func tests(_ scope: TestScope) -> String {
         switch scope {

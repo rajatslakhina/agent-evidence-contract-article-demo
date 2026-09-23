@@ -144,7 +144,7 @@ private struct EventRow: View {
                 return "\(run.command) -> exit \(run.exitCode), \(count) run, \(failed.count) failed"
             case .build:
                 return "\(run.command) -> exit \(run.exitCode)"
-            case .search(_, let hits):
+            case .search(_, _, let hits):
                 return "\(run.command) -> \(hits) hit\(hits == 1 ? "" : "s")"
             }
         }

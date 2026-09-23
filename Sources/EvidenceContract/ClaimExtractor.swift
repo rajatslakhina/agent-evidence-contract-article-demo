@@ -64,7 +64,7 @@ public struct ClaimExtractor: Sendable {
         pattern: #"\bno\s+(?:remaining\s+|other\s+|more\s+)?(?:references|callers|usages|uses)\s+(?:to|of)\s+([A-Za-z_]\w*)"#,
         options: [.caseInsensitive])
     private static let fullSuite = try! NSRegularExpression(
-        pattern: #"\b(?:all(?:\s+the)?\s+tests\s+(?:pass|are\s+passing|are\s+green)|(?:full\s+)?test\s+suite\s+(?:passes|is\s+green))\b"#,
+        pattern: #"\b(?:all(?:\s+the)?(?:\s+\d+)?\s+tests\s+(?:pass|are\s+passing|are\s+green)|(?:full\s+)?test\s+suite\s+(?:passes|is\s+green))\b"#,
         options: [.caseInsensitive])
     private static let namedTests = try! NSRegularExpression(
         pattern: #"\b([A-Z]\w*Tests(?:/\w+)?)\s+(?:pass|passes|are\s+passing|are\s+green)\b"#)
@@ -72,11 +72,32 @@ public struct ClaimExtractor: Sendable {
         pattern: #"\b(?:builds?\s+(?:cleanly|successfully|fine)|build\s+(?:succeeds|succeeded|is\s+green)|compiles\s+(?:cleanly|without\s+(?:errors|warnings)))\b"#,
         options: [.caseInsensitive])
 
-    /// A hedged success is not a success claim. "Not all tests pass" and
-    /// "builds cleanly except on Catalyst" are reports, not assertions to gate.
-    private static func isHedged(_ sentence: String) -> Bool {
-        let lower = " " + sentence.lowercased() + " "
-        return [" not ", "n't ", "fail", "except", " but "].contains { lower.contains($0) }
+    /// Clause boundaries: "but", "yet", "although", semicolons, and exception
+    /// qualifiers such as "except".
+    private static let clauseBreak = try! NSRegularExpression(
+        pattern: #",?\s+(?:but|yet|although|though|whereas)\s+|;\s*|,?\s+(?:except|apart from|other than)\b"#,
+        options: [.caseInsensitive])
+
+    /// A hedged success is not a success claim. Only the two words directly
+    /// before the match count, within the same clause and after the last
+    /// comma: "Not all tests pass" and "It doesn't build cleanly" are hedged;
+    /// "No UI changes, all tests pass" and "I didn't touch the API, and all
+    /// tests pass" are not. An exception qualifier closing the clause ("builds
+    /// cleanly except on Catalyst") also hedges it.
+    static func isHedged(_ sentence: String, matchAt location: Int) -> Bool {
+        let ns = sentence as NSString
+        let breaks = clauseBreak.matches(in: sentence, range: NSRange(location: 0, length: ns.length))
+        let clauseStart = breaks.last(where: { $0.range.location + $0.range.length <= location })
+            .map { $0.range.location + $0.range.length } ?? 0
+        var before = ns.substring(with: NSRange(location: clauseStart, length: location - clauseStart)).lowercased()
+        if let comma = before.lastIndex(of: ",") { before = String(before[before.index(after: comma)...]) }
+        let window = before.split(whereSeparator: { $0 == " " }).suffix(2)
+        if window.contains(where: { ["not", "no", "never", "none"].contains($0) || $0.hasSuffix("n't") }) { return true }
+        if let next = breaks.first(where: { $0.range.location >= location }) {
+            let separator = ns.substring(with: next.range).lowercased()
+            if ["except", "apart from", "other than"].contains(where: { separator.contains($0) }) { return true }
+        }
+        return false
     }
 
     static func kinds(in sentence: String) -> [ClaimKind] {
@@ -95,16 +116,14 @@ public struct ClaimExtractor: Sendable {
         for match in references.matches(in: sentence, range: range) {
             if let symbol = capture(match) { found.append((match.range.location, .noReferences(symbol: symbol))) }
         }
-        if !isHedged(sentence) {
-            for match in fullSuite.matches(in: sentence, range: range) {
-                found.append((match.range.location, .testsPass(.fullSuite)))
-            }
-            for match in namedTests.matches(in: sentence, range: range) {
-                if let name = capture(match) { found.append((match.range.location, .testsPass(.filtered([name])))) }
-            }
-            for match in build.matches(in: sentence, range: range) {
-                found.append((match.range.location, .buildSucceeds))
-            }
+        for match in fullSuite.matches(in: sentence, range: range) where !isHedged(sentence, matchAt: match.range.location) {
+            found.append((match.range.location, .testsPass(.fullSuite)))
+        }
+        for match in namedTests.matches(in: sentence, range: range) where !isHedged(sentence, matchAt: match.range.location) {
+            if let name = capture(match) { found.append((match.range.location, .testsPass(.filtered([name])))) }
+        }
+        for match in build.matches(in: sentence, range: range) where !isHedged(sentence, matchAt: match.range.location) {
+            found.append((match.range.location, .buildSucceeds))
         }
         return found.sorted { $0.location < $1.location }.map(\.kind)
     }

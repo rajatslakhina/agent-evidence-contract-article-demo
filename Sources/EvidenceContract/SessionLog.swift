@@ -1,6 +1,6 @@
 /// One thing the harness observed. There is deliberately no case for "the
-/// agent says it ran X": evidence enters this log only from the tool layer,
-/// never from the agent's own prose.
+/// agent says it ran X": the agent's prose is a separate input to the
+/// evaluator and can never become an event.
 public enum SessionEvent: Hashable, Sendable {
     case edit(file: String)
     case run(ToolRun)
@@ -11,7 +11,9 @@ public struct ToolRun: Hashable, Sendable {
         /// `executed` is nil when the output had no parseable summary line.
         case test(scope: TestScope, executed: Int?, failedTests: [String])
         case build
-        case search(pattern: String, hits: Int)
+        /// `pattern` is kept verbatim. `narrowed` is true for `-w`, a path
+        /// other than `.`, or a type/glob/max-count restriction.
+        case search(pattern: String, narrowed: Bool, hits: Int)
     }
 
     public let command: String
@@ -32,11 +34,17 @@ public struct ToolRun: Hashable, Sendable {
 public struct SessionLog: Hashable, Sendable {
     public private(set) var events: [SessionEvent]
 
-    public init(_ events: [SessionEvent] = []) {
+    /// An empty log. Events arrive through `record` and `recordEdit`.
+    public init() {
+        self.events = []
+    }
+
+    /// Internal on purpose: tests build logs directly, integrations should not.
+    init(_ events: [SessionEvent]) {
         self.events = events
     }
 
-    public mutating func append(_ event: SessionEvent) {
+    mutating func append(_ event: SessionEvent) {
         events.append(event)
     }
 
